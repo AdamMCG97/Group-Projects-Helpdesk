@@ -8,21 +8,20 @@
 	//error checking
 	ini_set('display_errors', 1);	
 	ini_set('display_startup_errors', 1);
-	error_reporting(0);
-	
-	//database connection
-	require_once 'MDB2.php';
-	$user = "root";
-	$pass = "teamproject";
-	$host = "localhost";
-	$db_name = "helpdesk";
+    error_reporting(E_ALL);
 
-	$conn = "mysql://$user:$pass@$host/$db_name";
-	$db =& MDB2::connect($conn);
+    $url = parse_url(getenv("DATABASE_URL"));
 
-	if (PEAR::isError($db)) { 
-		die($db->getMessage());
-	}
+    $server = $url["host"];
+    $username = $url["user"];
+    $password = $url["pass"];
+    $db = substr($url["path"], 1);
+
+    $conn = new mysqli($server, $username, $password, $db);
+
+    if ($conn->connect_errno) {
+        echo "Failed to connect to MySQL: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    }
 
 	$table = "Tags";
 	//set id sent to file as variable
@@ -31,20 +30,19 @@
 	//SQL to select all tags with correct id
 	$sql = "SELECT tag FROM $table WHERE id=$getId";
 
+    $tags = Array();
+
 	//execute query
-	$res =& $db->query($sql);
-
-	if (PEAR::isError($res)) {
-		die($res->getMessage());
-	}
-
-	$tags = Array();
-	while ($row = $res->fetchRow()) {
-		//add each tag to an array
-		array_push($tags, $row[0]);
-	}
+    if($res = $conn->query($sql)) {
+        while ($row = $res->fetch_row()) {
+            //add each tag to an array
+            array_push($tags, $row[0]);
+        }
+    }
 	
 	//echo array
 	echo json_encode(array("tags"=>$tags));
+
+    mysqli_close($conn);
 
 ?>

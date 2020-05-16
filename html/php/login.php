@@ -43,8 +43,9 @@
             }
     }
 
-    mysqli_close($conn);
 	//output stored results as array
 	echo json_encode(array("user"=>$user, "type"=>$type));
+
+    mysqli_close($conn);
 
 ?>

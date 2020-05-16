@@ -7,21 +7,21 @@
 	//error checking	
 	ini_set('display_errors', 1);	
 	ini_set('display_startup_errors', 1);
-	error_reporting(0);
-	
-	//database connection
-	require_once 'MDB2.php';
-	$user = "root";
-	$pass = "teamproject";
-	$host = "localhost";
-	$db_name = "helpdesk";
+    error_reporting(E_ALL);
 
-	$conn = "mysql://$user:$pass@$host/$db_name";
-	$db =& MDB2::connect($conn);
+    //database connection
+    $url = parse_url(getenv("DATABASE_URL"));
 
-	if (PEAR::isError($db)) { 
-		die($db->getMessage());
-	}
+    $server = $url["host"];
+    $username = $url["user"];
+    $password = $url["pass"];
+    $db = substr($url["path"], 1);
+
+    $conn = new mysqli($server, $username, $password, $db);
+
+    if ($conn->connect_errno) {
+        echo "Failed to connect to MySQL: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    }
 
 	$table_tickets = "Tickets";
 
@@ -47,14 +47,10 @@
 	$sql = "UPDATE $table_tickets SET status='$status', callerfirstname='$first_name', callerlastname='$last_name', specialist='$specialist', type='$type', summary='$summary', details='$details', email='$email', hwserial='$hwserial', osname='$osname', swname='$swname', swversion='$swversion', swlicense='$swlicense', problemtype='$problem_type', archived = '$archived' WHERE id='$id'";
 
 	//execute sql
-	$res =& $db->query($sql);
+    if(!$conn->query($sql)) {
+        echo "Failed to delete data: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    }
 
-	if (PEAR::isError($res)) {
-		echo $res->getMessage();
-		die($res->getMessage());
-	}
-	else {
-		echo "OK";
-	}
+    mysqli_close($conn);
 
 ?>

@@ -15,7 +15,7 @@
     $username = $url["user"];
     $password = $url["pass"];
     $db = substr($url["path"], 1);
-    
+
     $conn = new mysqli($server, $username, $password, $db);
 
     if ($conn->connect_errno) {
@@ -35,5 +35,7 @@
     if(!$conn->query($sql)) {
         echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
     }
+
+    mysqli_close($conn);
 
 ?>

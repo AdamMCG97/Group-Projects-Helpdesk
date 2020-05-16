@@ -91,4 +91,6 @@
         echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
     };
 
+    mysqli_close($conn);
+
 ?>
