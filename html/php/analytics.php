@@ -71,7 +71,7 @@
 
         if ($res->num_rows > 0) {
 
-            while ($row = $res->fetch_assoc()) {
+            while ($row = $res->fetch_row()) {
                 //store query results in appropriate variables
                 $totalopen = $row[0];
                 $totalclosed = $row[1];
@@ -86,9 +86,9 @@
                 $totalnotarchived = $row[10];
             }
         }
-        else {
+/*        else {
             $allQuerysReturnRes = false;
-        }
+        }*/
     }
 
 	//SQL query to gather various data from various tables
@@ -99,7 +99,7 @@
 
         if ($res->num_rows > 0) {
 
-            while ($row = $res->fetchRow()) {
+            while ($row = $res->fetch_row()) {
                 //store query results in appropriate variables
                 $resolvedtime = strtotime($row[0]);
                 $createdtime = strtotime($row[1]);
@@ -109,13 +109,13 @@
                 $avgcount = $avgcount + 1;
             }
         }
-        else {
+/*        else {
             $allQuerysReturnRes = false;
-        }
+        }*/
     }
-    else {
+ /*   else {
         $allQuerysReturnRes = false;
-    }
+    }*/
 
 	//SQL query to gather various data from various tables
 	$sql = "SELECT 
@@ -154,17 +154,16 @@
                 }
             }
         }
-        else {
+/*        else {
             $allQuerysReturnRes = false;
-        }
+        }*/
     }
-    else {
+/*    else {
         $allQuerysReturnRes = false;
-    }
+    }*/
 
     mysqli_close($conn);
 
-    if($allQuerysReturnRes) {
         //data manipulation
         $total = $totalopen + $totalclosed;
         $softwarepercent = round(($totalsoftware / $total) * 100);
@@ -185,6 +184,5 @@
 
         echo json_encode(array("total" => $total, "totalopen" => $totalopen, "totalclosed" => $totalclosed, "totalspecialists" => $totalspecialists, "softwarepercent" => $softwarepercent, "totalhardware" => $totalhardware, "totalpending" => $totalpending, "totalongoing" => $totalongoing, "totalsolved" => $totalsolved, "avg" => $displayavg, "specialistsolve" => $specialistsolve, "totalresolved" => $totalresolved, "operatorsolve" => $operatorsolve, "availablepercent" => $availablepercent, "totaltags" => $totaltags, "totalnotarchived" => $totalnotarchived));
 
-    }
 
 ?>
