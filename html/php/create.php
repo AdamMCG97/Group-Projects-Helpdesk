@@ -47,53 +47,52 @@
 	//SQL to enter data into corrrect fields
 	$sql = "INSERT INTO $table_tickets (callerfirstname, callerlastname, specialist, type, summary, details, operator, email, followup, hwserial, osname, swname, swversion, swlicense, problemtype, status) VALUES ('$first_name', '$last_name', '$specialist', '$type', '$summary', '$details', '$operator', '$email', '$followup', '$hwserial', '$osname', '$swname', '$swversion', '$swlicense', '$problem_type', '$status')";
 
-	echo $sql;
-
-	//execute SQL
-    if(!$conn->query($sql)) {
-        echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
-    }
-
-	//SQL to get id of ticket just created
-	//newest ticket will be first result
-	$sql = "SELECT id FROM Tickets";
-	
-	//query database
-    if($res = $conn->query($sql)) {
-        while ($row = $res->fetch_row()) {
-            //store top result in variable
-            $id = $row[0];
-        }
-    }
-
-	$table = 'Tags';	
-
-	//split tag string into array
-	//create new element of array around each comma and populate with following string
-	$tagarray = explode(',', $tags);
-	//calculate amount of tags entered
-	$length = count($tagarray) - 1;
-
-	//for each tag
-	for($x = 0; $x <= $length; $x++) {
-		//remove any spaces in string
-		$tagarray[$x] = str_replace(' ', '', $tagarray[$x]);
-	}
-	
-	//SQL to enter each tag into database with associated id
-	$sql = "INSERT INTO $table (id, tag) VALUES ('$id', '$tagarray[0]')";
-	
-	//for each tag after the first
-	for($y = 1; $y <= $length; $y++) {
-		//concatenate sql to add each tag to sql statement
-		$sql = $sql . ", ('$id', '$tagarray[$y]')";
-	}
 	//execute SQL
     if(!$conn->query($sql)) {
         echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
     }
     else {
-        echo "OK";
+
+        //SQL to get id of ticket just created
+        //newest ticket will be first result
+        $sql = "SELECT id FROM Tickets";
+
+        //query database
+        if ($res = $conn->query($sql)) {
+            while ($row = $res->fetch_row()) {
+                //store top result in variable
+                $id = $row[0];
+            }
+        }
+
+        $table = 'Tags';
+
+        //split tag string into array
+        //create new element of array around each comma and populate with following string
+        $tagarray = explode(',', $tags);
+        //calculate amount of tags entered
+        $length = count($tagarray) - 1;
+
+        //for each tag
+        for ($x = 0; $x <= $length; $x++) {
+            //remove any spaces in string
+            $tagarray[$x] = str_replace(' ', '', $tagarray[$x]);
+        }
+
+        //SQL to enter each tag into database with associated id
+        $sql = "INSERT INTO $table (id, tag) VALUES ('$id', '$tagarray[0]')";
+
+        //for each tag after the first
+        for ($y = 1; $y <= $length; $y++) {
+            //concatenate sql to add each tag to sql statement
+            $sql = $sql . ", ('$id', '$tagarray[$y]')";
+        }
+        //execute SQL
+        if (!$conn->query($sql)) {
+            echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
+        } else {
+            echo "OK";
+        }
     }
 
     mysqli_close($conn);

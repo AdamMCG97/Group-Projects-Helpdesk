@@ -99,7 +99,6 @@ $(document).on('click', '#button-create', function() {
 
 	// build the GET string with all of the information
 	var getString = '?firstname=' + $('#callerName').val().split(' ')[0] + '&lastname=' + $('#callerName').val().split(' ')[1] + '&email=' + $('#staffEmail').val() + '&specialist=' + $('#assign-specialist').val() + '&type=' + ticketType + '&problemtype=' + $('#problem-type').val() + '&summary=' + summaryEl.val() + '&details=' + detailsEl.val() + '&followup=' + followupId + '&operator=' + $('#created-by').text() + '&hwserial=' + $('#hardware-serial').val() + '&osname=' + $('#operatingsystem').val() + '&swname=' + $('#software-name').val() + '&swversion=' + $('#software-version').val() + '&swlicense=' + $('#software-license').val() + '&tags=' + $('#tags').val() + '&status=' + status;
-
 	// count the number of empty fields and give them a red border so the user knows they need to be filled
 	var count = 0;
 	$('input, select, textarea').each(function(i, el) {
