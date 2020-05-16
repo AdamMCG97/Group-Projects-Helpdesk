@@ -9,28 +9,27 @@
 	//error checking
 	ini_set('display_errors', 1);	
 	ini_set('display_startup_errors', 1);
-	error_reporting(0);
+	error_reporting(E_ALL);
 
-	//database connection
-	require_once 'MDB2.php';
-	$user = "root";
-	$pass = "teamproject";
-	$host = "localhost";
-	$db_name = "helpdesk";
+    $url = parse_url(getenv("DATABASE_URL"));
 
-	//$conn = "mysql://$user:$pass@$host/$db_name";
-	$conn = parse_url(getenv("CLEARDB_DATABASE_URL"));
-	$db =& MDB2::connect($conn);
+    $server = $url["host"];
+    $username = $url["user"];
+    $password = $url["pass"];
+    $db = substr($url["path"], 1);
 
-	if (PEAR::isError($db)) { 
-		die($db->getMessage());
-	}
+    $conn = new mysqli($server, $username, $password, $db);
+
+    if ($conn->connect_errno) {
+        echo "Failed to connect to MySQL: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    }
+
+    $allQuerysReturnRes = true;
 
 	$table = "Tickets";
 	
 	//SQL query to gather various data from various tables, each given appropriate names for their row
-	$sql = "
-	SELECT (SELECT Count(*) 
+	$sql = "SELECT (SELECT Count(*) 
         FROM   $table 
         WHERE  status = 'pending' 
                 OR status = 'ongoing') AS 'tot_open', 
@@ -68,46 +67,55 @@
         WHERE  archived = '0')         AS tot_notarchived";
 
 	//query database
-	$res =& $db->query($sql);
+	if($res = $conn->query($sql)) {
 
-	if (PEAR::isError($res)) {
-		die($res->getMessage());
-	}
-	
-	while ($row = $res->fetchRow()) {
-		//store query results in appropriate variables
-		$totalopen = $row[0];
-		$totalclosed = $row[1];
-		$totalspecialists = $row[2];
-		$totalhardware = $row[3];
-		$totalsoftware = $row[4];
-		$totalpending = $row[5];
-		$totalongoing = $row[6];
-		$totalsolved = $row[7];
-		$totalunavailable = $row[8];
-		$totaltags = $row[9];
-		$totalnotarchived = $row[10];
-	}
+        if ($res->num_rows > 0) {
+
+            while ($row = $res->fetch_assoc()) {
+                //store query results in appropriate variables
+                $totalopen = $row[0];
+                $totalclosed = $row[1];
+                $totalspecialists = $row[2];
+                $totalhardware = $row[3];
+                $totalsoftware = $row[4];
+                $totalpending = $row[5];
+                $totalongoing = $row[6];
+                $totalsolved = $row[7];
+                $totalunavailable = $row[8];
+                $totaltags = $row[9];
+                $totalnotarchived = $row[10];
+            }
+        }
+        else {
+            $allQuerysReturnRes = false;
+        }
+    }
 
 	//SQL query to gather various data from various tables
 	$sql = "SELECT Resolvedtickets.timestamp, Tickets.timestamp, Tickets.id FROM Resolvedtickets JOIN Tickets WHERE Resolvedtickets.id = Tickets.id";
 
 	//query database
-	$res =& $db->query($sql);
+    if($res = $conn->query($sql)) {
 
-	if (PEAR::isError($res)) {
-		die($res->getMessage());
-	}
+        if ($res->num_rows > 0) {
 
-	while ($row = $res->fetchRow()) {
-		//store query results in appropriate variables
-		$resolvedtime = strtotime($row[0]);
-		$createdtime = strtotime($row[1]);
-		$id = $row[2];
-		$time = $resolvedtime - $createdtime;
-		$avgtime = $avgtime + $time;
-		$avgcount = $avgcount + 1;
-	}
+            while ($row = $res->fetchRow()) {
+                //store query results in appropriate variables
+                $resolvedtime = strtotime($row[0]);
+                $createdtime = strtotime($row[1]);
+                $id = $row[2];
+                $time = $resolvedtime - $createdtime;
+                $avgtime = $avgtime + $time;
+                $avgcount = $avgcount + 1;
+            }
+        }
+        else {
+            $allQuerysReturnRes = false;
+        }
+    }
+    else {
+        $allQuerysReturnRes = false;
+    }
 
 	//SQL query to gather various data from various tables
 	$sql = "SELECT 
@@ -129,43 +137,54 @@
 		) AS operatorsolve";
 	
 	//query database
-	$res =& $db->query($sql);
+    if($res = $conn->query($sql)) {
 
-	if (PEAR::isError($res)) {
-		die($res->getMessage());
-	}
+        if ($res->num_rows > 0) {
 
-	while ($row = $res->fetchRow()) {
-		//store query results in appropriate variables
-		$specialistsolve = $row[0];
-		$operatorsolve = $row[1];
-		//if no result set to 0
-		if ($specialistsolve == null) {
-			$specialistsolve = 0;
-		}
-		if ($operatorsolve == null) {
-			$operatorsolve = 0;
-		}
-	}
+            while ($row = $res->fetch_row()) {
+                //store query results in appropriate variables
+                $specialistsolve = $row[0];
+                $operatorsolve = $row[1];
+                //if no result set to 0
+                if ($specialistsolve == null) {
+                    $specialistsolve = 0;
+                }
+                if ($operatorsolve == null) {
+                    $operatorsolve = 0;
+                }
+            }
+        }
+        else {
+            $allQuerysReturnRes = false;
+        }
+    }
+    else {
+        $allQuerysReturnRes = false;
+    }
 
-	//data manipulation
-	$total = $totalopen + $totalclosed;
-	$softwarepercent = round(($totalsoftware / $total) * 100);
+    mysqli_close($conn);
 
-	$totalavailable = $totalspecialists - $totalunavailable;
-	$availablepercent = round(($totalavailable / $totalspecialists) * 100);
+    if($allQuerysReturnRes) {
+        //data manipulation
+        $total = $totalopen + $totalclosed;
+        $softwarepercent = round(($totalsoftware / $total) * 100);
 
-	$totalresolved = $specialistsolve + $operatorsolve;
-	
-	//convert average time in seconds to hours and minutes
-	$avg = $avgtime / $avgcount;
-	$avghour = floor($avg / 3600);
-	$avgmin = round(($avg - ($avghour * 3600)) / 60);
-	if ($avgmin < 10){
-		$avgmin = '0' . $avgmin;
-	}
-	$displayavg = $avghour . 'h' . $avgmin . 'm';
-	
-	//echo results
-	echo json_encode(array("total"=>$total, "totalopen"=>$totalopen, "totalclosed"=>$totalclosed, "totalspecialists"=>$totalspecialists, "softwarepercent"=>$softwarepercent, "totalhardware"=>$totalhardware, "totalpending"=>$totalpending, "totalongoing"=>$totalongoing, "totalsolved"=>$totalsolved, "avg"=>$displayavg, "specialistsolve"=>$specialistsolve, "totalresolved"=>$totalresolved, "operatorsolve"=>$operatorsolve, "availablepercent"=>$availablepercent, "totaltags"=>$totaltags, "totalnotarchived"=>$totalnotarchived));
+        $totalavailable = $totalspecialists - $totalunavailable;
+        $availablepercent = round(($totalavailable / $totalspecialists) * 100);
+
+        $totalresolved = $specialistsolve + $operatorsolve;
+
+        //convert average time in seconds to hours and minutes
+        $avg = $avgtime / $avgcount;
+        $avghour = floor($avg / 3600);
+        $avgmin = round(($avg - ($avghour * 3600)) / 60);
+        if ($avgmin < 10) {
+            $avgmin = '0' . $avgmin;
+        }
+        $displayavg = $avghour . 'h' . $avgmin . 'm';
+
+        echo json_encode(array("total" => $total, "totalopen" => $totalopen, "totalclosed" => $totalclosed, "totalspecialists" => $totalspecialists, "softwarepercent" => $softwarepercent, "totalhardware" => $totalhardware, "totalpending" => $totalpending, "totalongoing" => $totalongoing, "totalsolved" => $totalsolved, "avg" => $displayavg, "specialistsolve" => $specialistsolve, "totalresolved" => $totalresolved, "operatorsolve" => $operatorsolve, "availablepercent" => $availablepercent, "totaltags" => $totaltags, "totalnotarchived" => $totalnotarchived));
+
+    }
+
 ?>
