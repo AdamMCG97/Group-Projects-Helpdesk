@@ -58,7 +58,7 @@
 	
 	//query database
     if($res = $conn->query($sql)) {
-        while ($row = $res->fetchRow()) {
+        while ($row = $res->fetch_row()) {
             //store top result in variable
             $id = $row[0];
         }
