@@ -26,7 +26,31 @@
 	$table = "Tickets";
 
 	//SQL to select ticket and user information for each specialist including returning the user when no data exists
-	$sql = "SELECT a.closed, b.open, a.username, firstname, lastname, available FROM (SELECT COUNT(Tickets.id) AS 'closed', Specialists.username FROM Specialists LEFT JOIN Tickets ON Specialists.username = Tickets.specialist AND status = 'solved' GROUP BY Specialists.username) AS a LEFT JOIN (SELECT COUNT(Tickets.id) AS 'open', Specialists.username FROM Specialists LEFT JOIN Tickets ON Specialists.username = Tickets.specialist AND (status = 'pending' OR status = 'ongoing') GROUP BY Specialists.username) AS b ON a.username = b.username JOIN Users ON a.username = Users.username";
+	$sql = "
+	SELECT a.closed, 
+       b.open, 
+       a.username, 
+       firstname, 
+       lastname, 
+       available 
+	FROM   (SELECT Count(tickets.id) AS 'closed', 
+               specialists.username 
+        FROM   specialists 
+               left join tickets 
+                      ON specialists.username = tickets.specialist 
+                         AND status = 'solved' 
+        GROUP  BY specialists.username) AS a 
+       left join (SELECT Count(tickets.id) AS 'open', 
+                         specialists.username 
+                  FROM   specialists 
+                         left join tickets 
+                                ON specialists.username = tickets.specialist 
+                                   AND ( status = 'pending' 
+                                          OR status = 'ongoing' ) 
+                  GROUP  BY specialists.username) AS b 
+              ON a.username = b.username 
+       join users 
+         ON a.username = users.username";
 
 	//execute sql
 	$res =& $db->query($sql);

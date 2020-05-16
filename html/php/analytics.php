@@ -18,7 +18,8 @@
 	$host = "localhost";
 	$db_name = "helpdesk";
 
-	$conn = "mysql://$user:$pass@$host/$db_name";
+	//$conn = "mysql://$user:$pass@$host/$db_name";
+	$conn = parse_url(getenv("CLEARDB_DATABASE_URL"));
 	$db =& MDB2::connect($conn);
 
 	if (PEAR::isError($db)) { 
@@ -28,7 +29,43 @@
 	$table = "Tickets";
 	
 	//SQL query to gather various data from various tables, each given appropriate names for their row
-	$sql = "SELECT (SELECT COUNT(*) FROM $table WHERE status='pending' OR status='ongoing') AS 'tot_open', (SELECT COUNT(*) FROM $table WHERE status='solved') AS 'tot_closed', (SELECT COUNT( * ) FROM Specialists) AS  'tot_specialists', (SELECT COUNT(*) FROM $table WHERE type = 'Hardware') AS 'tot_hardware', (SELECT COUNT(*) FROM $table WHERE type = 'Software') AS 'tot_software', (SELECT COUNT(*) FROM $table WHERE status = 'pending' AND archived ='0') AS 'tot_pending', (SELECT COUNT(*) FROM $table WHERE status = 'ongoing' AND archived = '0') AS 'tot_ongoing', (SELECT COUNT(*) FROM $table WHERE status = 'solved' AND archived = '0') AS 'tot_solved', (SELECT COUNT(*) FROM Users WHERE type = 'Specialist' AND available = '0') AS 'tot_unavailable', (SELECT COUNT(*) FROM Tags) AS 'tot_tags', (SELECT COUNT(*) FROM Tickets WHERE archived = '0') AS tot_notarchived";
+	$sql = "
+	SELECT (SELECT Count(*) 
+        FROM   $table 
+        WHERE  status = 'pending' 
+                OR status = 'ongoing') AS 'tot_open', 
+       (SELECT Count(*) 
+        FROM   $table 
+        WHERE  status = 'solved')      AS 'tot_closed', 
+       (SELECT Count(*) 
+        FROM   specialists)            AS 'tot_specialists', 
+       (SELECT Count(*) 
+        FROM   $table 
+        WHERE  type = 'Hardware')      AS 'tot_hardware', 
+       (SELECT Count(*) 
+        FROM   $table 
+        WHERE  type = 'Software')      AS 'tot_software', 
+       (SELECT Count(*) 
+        FROM   $table 
+        WHERE  status = 'pending' 
+               AND archived = '0')     AS 'tot_pending', 
+       (SELECT Count(*) 
+        FROM   $table 
+        WHERE  status = 'ongoing' 
+               AND archived = '0')     AS 'tot_ongoing', 
+       (SELECT Count(*) 
+        FROM   $table 
+        WHERE  status = 'solved' 
+               AND archived = '0')     AS 'tot_solved', 
+       (SELECT Count(*) 
+        FROM   users 
+        WHERE  type = 'Specialist' 
+               AND available = '0')    AS 'tot_unavailable', 
+       (SELECT Count(*) 
+        FROM   tags)                   AS 'tot_tags', 
+       (SELECT Count(*) 
+        FROM   tickets 
+        WHERE  archived = '0')         AS tot_notarchived";
 
 	//query database
 	$res =& $db->query($sql);
@@ -73,7 +110,23 @@
 	}
 
 	//SQL query to gather various data from various tables
-	$sql = "SELECT (SELECT COUNT(*) FROM Resolvedtickets JOIN Users WHERE Resolvedtickets.solvedby = Users.username AND Users.type = 'Specialist' GROUP BY Users.type) AS specialistsolve, (SELECT COUNT(*) FROM Resolvedtickets JOIN Users WHERE Resolvedtickets.solvedby = Users.username AND Users.type = 'Operator' GROUP BY Users.type) AS operatorsolve";
+	$sql = "SELECT 
+       ( 
+                SELECT   Count(*) 
+                FROM     resolvedtickets 
+                JOIN     users 
+                where    resolvedtickets.solvedby = users.username 
+                AND      users.type = 'Specialist' 
+                GROUP BY users.type
+		) AS specialistsolve, 
+       ( 
+                SELECT   count(*) 
+                FROM     resolvedtickets 
+                JOIN     users 
+                WHERE    resolvedtickets.solvedby = users.username 
+                AND      users.type = 'Operator' 
+                GROUP BY users.type
+		) AS operatorsolve";
 	
 	//query database
 	$res =& $db->query($sql);
