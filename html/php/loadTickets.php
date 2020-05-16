@@ -32,7 +32,7 @@
 
     //execute query
     if($res = $conn->query($sql)) {
-        while ($row = $res->fetchRow()) {
+        while ($row = $res->fetch_row()) {
             //store results in appropriate variables
             $first_name = $row[0];
             $last_name = $row[1];

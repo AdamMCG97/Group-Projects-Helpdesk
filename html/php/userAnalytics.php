@@ -56,7 +56,7 @@
 
 	//execute sql
 	if($res = $conn->query($sql)) {
-		while ($row = $res->fetchRow()) {
+		while ($row = $res->fetch_row()) {
 			//store results as appropriate variables
 			$closedtickets = $row[0];
 			$opentickets = $row[1];
