@@ -46,7 +46,9 @@
 
 	//SQL to enter data into corrrect fields
 	$sql = "INSERT INTO $table_tickets (callerfirstname, callerlastname, specialist, type, summary, details, operator, email, followup, hwserial, osname, swname, swversion, swlicense, problemtype, status) VALUES ('$first_name', '$last_name', '$specialist', '$type', '$summary', '$details', '$operator', '$email', '$followup', '$hwserial', '$osname', '$swname', '$swversion', '$swlicense', '$problem_type', '$status')";
-	
+
+	echo $sql;
+
 	//execute SQL
     if(!$conn->query($sql)) {
         echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
