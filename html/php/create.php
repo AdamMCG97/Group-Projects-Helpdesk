@@ -89,7 +89,10 @@
 	//execute SQL
     if(!$conn->query($sql)) {
         echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
-    };
+    }
+    else {
+        echo "OK";
+    }
 
     mysqli_close($conn);
 
