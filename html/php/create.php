@@ -8,21 +8,20 @@
 	//error checking
 	ini_set('display_errors', 1);	
 	ini_set('display_startup_errors', 1);
-	error_reporting(0);
-	
-	//database connection
-	require_once 'MDB2.php';
-	$user = "root";
-	$pass = "teamproject";
-	$host = "localhost";
-	$db_name = "helpdesk";
+    error_reporting(E_ALL);
 
-	$conn = "mysql://$user:$pass@$host/$db_name";
-	$db =& MDB2::connect($conn);
+    $url = parse_url(getenv("DATABASE_URL"));
 
-	if (PEAR::isError($db)) { 
-		die($db->getMessage());
-	}
+    $server = $url["host"];
+    $username = $url["user"];
+    $password = $url["pass"];
+    $db = substr($url["path"], 1);
+
+    $conn = new mysqli($server, $username, $password, $db);
+
+    if ($conn->connect_errno) {
+        echo "Failed to connect to MySQL: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    }
 
 	$table_tickets = "Tickets";
 	
@@ -49,31 +48,21 @@
 	$sql = "INSERT INTO $table_tickets (callerfirstname, callerlastname, specialist, type, summary, details, operator, email, followup, hwserial, osname, swname, swversion, swlicense, problemtype, status) VALUES ('$first_name', '$last_name', '$specialist', '$type', '$summary', '$details', '$operator', '$email', '$followup', '$hwserial', '$osname', '$swname', '$swversion', '$swlicense', '$problem_type', '$status')";
 	
 	//execute SQL
-	$res =& $db->query($sql);
-
-	if (PEAR::isError($res)) {
-		echo $res->getMessage();
-		die($res->getMessage());
-	}
-	else {
-		echo "OK";
-	}
+    if(!$conn->query($sql)) {
+        echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    }
 
 	//SQL to get id of ticket just created
 	//newest ticket will be first result
 	$sql = "SELECT id FROM Tickets";
 	
 	//query database
-	$res =& $db->query($sql);
-
-	if (PEAR::isError($res)) {
-		die($res->getMessage());
-	}
-	
-	while ($row = $res->fetchRow()) {
-		//store top result in variable
-		$id = $row[0];
-	}
+    if($res = $conn->query($sql)) {
+        while ($row = $res->fetchRow()) {
+            //store top result in variable
+            $id = $row[0];
+        }
+    }
 
 	$table = 'Tags';	
 
@@ -98,6 +87,8 @@
 		$sql = $sql . ", ('$id', '$tagarray[$y]')";
 	}
 	//execute SQL
-	$res =& $db->query($sql);
+    if(!$conn->query($sql)) {
+        echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    };
 
 ?>

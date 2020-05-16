@@ -7,21 +7,20 @@
 	//error checking
 	ini_set('display_errors', 1);	
 	ini_set('display_startup_errors', 1);
-	error_reporting(0);
-	
-	//database connection
-	require_once 'MDB2.php';
-	$user = "root";
-	$pass = "teamproject";
-	$host = "localhost";
-	$db_name = "helpdesk";
+    error_reporting(E_ALL);
 
-	$conn = "mysql://$user:$pass@$host/$db_name";
-	$db =& MDB2::connect($conn);
+    $url = parse_url(getenv("DATABASE_URL"));
 
-	if (PEAR::isError($db)) { 
-		die($db->getMessage());
-	}
+    $server = $url["host"];
+    $username = $url["user"];
+    $password = $url["pass"];
+    $db = substr($url["path"], 1);
+    
+    $conn = new mysqli($server, $username, $password, $db);
+
+    if ($conn->connect_errno) {
+        echo "Failed to connect to MySQL: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    }
 
 	$table_problem_types = "Problemtypes";
 	
@@ -31,16 +30,10 @@
 	
 	//SQL to enter data into correct fields
 	$sql = "INSERT INTO $table_problem_types (problem_type, subtype_of) VALUES ('$desc', '$subtype_of')";
-	
-	//execute SQL
-	$res =& $db->query($sql);
 
-	if (PEAR::isError($res)) {
-		echo $res->getMessage();
-		die($res->getMessage());
-	}
-	else {
-		echo "OK";
-	}
+    //execute SQL
+    if(!$conn->query($sql)) {
+        echo "Failed to save data: (" . $conn->connect_errno . ") " . $conn->connect_error;
+    }
 
 ?>
